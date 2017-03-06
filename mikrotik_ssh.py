@@ -12,10 +12,7 @@ class MtControl(object): #TODO разобраться с закрытием пе
 
     def __init__(self, address, port, username, password):
         self.address = address
-
-        if port:
-            self.port = port
-
+        self.port = port
         self.username = username
         self.password = password
         self.connection = self.connect()
@@ -24,7 +21,8 @@ class MtControl(object): #TODO разобраться с закрытием пе
         return self.connection
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.connection.close()
+        if self.connection:
+            self.connection.close()
 
     # def __del__(self):
     #     self.close()
@@ -40,18 +38,17 @@ class MtControl(object): #TODO разобраться с закрытием пе
         try:
             mt_ssh.connect(self.address, self.port, username=self.username, password=self.password, timeout=1)
 
-        except SSHClient as e:
-            return e
+        except NoValidConnectionsError:
+            print('Connection error!')
 
-        # except NoValidConnectionsError:
-        #     print('Connection error!')
-        #
-        # except AuthenticationException as e:
-        #     raise e
-        #     print('Authentication failed!')
-        #
-        # except SSHException:
-        #     print('Error reading SSH protocol banner')
+        except AuthenticationException:
+            print('Authentication failed!')
+
+        except SSHException:
+            print('Error reading SSH protocol banner')
+
+        except socket.timeout:
+            print('Connection timeout')
 
         else:
             return mt_ssh
@@ -75,7 +72,7 @@ class MtControl(object): #TODO разобраться с закрытием пе
 
         if output != "":
             # remove /r and /n
-            return output.rstrip()
+            print output.rstrip()
         else:
             return None
 
@@ -97,18 +94,18 @@ class MtControl(object): #TODO разобраться с закрытием пе
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--address', type=str, required=True)
-    parser.add_argument('-u', '--username', type=str, required=True, default='admin')
-    parser.add_argument('-p', '--password', type=str, required=True)
+    parser.add_argument('--port', type=int, required=False, default=22)
+    parser.add_argument('-u', '--username', type=str, required=False, default='admin')
+    parser.add_argument('-p', '--password', type=str, required=False, default='')
     parser.add_argument('-c', '--command', type=str, required=True, nargs='+')
 
     args = parser.parse_args()
 
-    port = 22
-
-    mt_ssh = MtControl(args.address, port, args.username, args.password)
-    mt_ssh.execute(args.command)
-    mt_ssh.close()
-
+    with MtControl(args.address, args.port, args.username, args.password) as mt_ssh:
+        try:
+            mt_ssh.execute(args.command)
+        except Exception:
+            pass
 
 if __name__ == '__main__':
     main()
