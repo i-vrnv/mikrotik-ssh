@@ -1,19 +1,29 @@
+# Microtik SSH
 Python script to send SSH command to Mikrotik device.
 
-usage: mikrotik_ssh.py [-h] -a ADDRESS [--port PORT] [-u USERNAME] [-p PASSWORD] -c COMMAND [COMMAND ...]
+## Usage
+mikrotik_ssh.py [-h] -a ADDRESS [--port PORT] [-u USERNAME] [-p PASSWORD] -c COMMAND [COMMAND ...]
 
 optional arguments:
-    -h, --help                show this help message and exit
-    -a ADDRESS, --address     Hostname or IP address of device
-    --port                    Port to connect to on the remote host (default: 22)
-    -u USERNAME, --username   User to connect to on the remote host (default: admin)
-    -p PASSWORD, --password   Password. Special characters must be escaped. (default: blank)
-    -c COMMAND [COMMAND ...], --command COMMAND [COMMAND ...]
+
+| Argument | Discription |
+| ------ | ------ |
+| -h, --help | show this help message and exit |
+| -a, --address | Hostname or IP address of device |
+| --port | Port to connect to on the remote host (default: 22) |
+| -u, --username | User to connect to on the remote host (default: admin) |
+|-p, --password | Password. Special characters must be escaped. (default: blank) |
+| -c, --command | Command for execute |
 
 example:
-
-    python mikrotik_ssh.py -a 10.10.10.1 -p passw0RD\! -c 'system identity print'
-    python mikrotik_ssh.py --address 10.10.10.1 --username admin --password passw0RD\! --command 'system identity print'
-
+```sh
+$python mikrotik_ssh.py -a 10.10.10.1 -p passw0RD\! -c 'system identity print'
+```
+or
+```sh
+$python mikrotik_ssh.py --address 10.10.10.1 --username admin --password passw0RD\! --command 'system identity print'
+```
 output:
-    name: RT-01
+```sh
+$name: RT-01
+```
