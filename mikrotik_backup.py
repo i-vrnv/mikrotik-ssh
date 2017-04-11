@@ -54,10 +54,9 @@ def ftp_check_directory(directory): #TODO Работает, офоромить �
 
 
 def backup():
-
+    #walk thru all sections
     for section in config.sections():
         if section != 'general' and section != 'ftp':
-
             mt_host = config.get(section, 'host')
             mt_port = int(config.get(section, 'port'))
             mt_username = config.get(section, 'username')

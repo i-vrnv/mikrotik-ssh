@@ -3,9 +3,13 @@
 import argparse
 import re
 import socket
-from paramiko import SSHClient
-from paramiko import AutoAddPolicy
-from paramiko.ssh_exception import NoValidConnectionsError, AuthenticationException, SSHException
+try:
+    from paramiko import SSHClient
+    from paramiko import AutoAddPolicy
+    from paramiko.ssh_exception import NoValidConnectionsError, AuthenticationException, SSHException
+except ImportError:
+    from paramiko import SSHClient
+    print "Import error. Chech paramiko module."
 
 
 class MtControl(object): #TODO разобраться с закрытием переданного инстанса
@@ -18,7 +22,7 @@ class MtControl(object): #TODO разобраться с закрытием пе
         self.connection = self.connect()
 
     def __enter__(self):
-        return self.connection
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection:
@@ -71,8 +75,8 @@ class MtControl(object): #TODO разобраться с закрытием пе
             output = output + line
 
         if output != "":
-            # remove /r and /n
-            print output.rstrip()
+            # rstrip() for remove /r and /n
+            return output.rstrip()
         else:
             return None
 
