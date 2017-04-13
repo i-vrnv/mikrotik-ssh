@@ -108,6 +108,7 @@ def main():
     with MtControl(args.address, args.port, args.username, args.password) as mt_ssh:
         try:
             mt_ssh.execute(args.command)
+        #TODO Обработать исключение
         except Exception:
             pass
 
