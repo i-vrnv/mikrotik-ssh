@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # get from https://wiki.mikrotik.com/wiki/Manual:API
 
-import sys, posix, time, md5, binascii, socket, select
+import sys, posix, time, binascii, socket, select, hashlib
 
 
 class ApiRos(object):
@@ -15,7 +15,7 @@ class ApiRos(object):
 
         for repl, attrs in self.talk(["/login"]):
             chal = binascii.unhexlify(attrs['=ret'])
-        md = md5.new()
+        md = hashlib.md5()
         md.update('\x00')
         md.update(pwd)
         md.update(chal)
@@ -144,17 +144,17 @@ class ApiRos(object):
 
 
 def main():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((sys.argv[1], 8728))
-    apiros = ApiRos(s)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((sys.argv[1], 8728))
+    apiros = ApiRos(sock)
     apiros.login(sys.argv[2], sys.argv[3])
 
     input_sentence = ["/system/identity/print"]
 
     apiros.write_sentence(input_sentence)
 
-    r = select.select([s], [], [], None)
-    if s in r[0]:
+    r = select.select([sock], [], [], None)
+    if sock in r[0]:
         # something to read in socket, read sentence
         x = apiros.read_sentence()
         print(x)
