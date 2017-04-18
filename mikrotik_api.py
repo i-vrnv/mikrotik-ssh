@@ -4,12 +4,12 @@
 import sys, posix, time, md5, binascii, socket, select
 
 
-class ApiRos:
+class ApiRos(object):
     "Routeros api"
-    def __init__(self, sk):
-        self.sk = sk
+    def __init__(self, sock):
+        self.sock = sock
         self.current_tag = 0
-        
+
     def login(self, username, pwd):
         chal = None
 
@@ -26,7 +26,7 @@ class ApiRos:
         if self.write_sentence(words) == 0:
             return
         r = []
-        while 1:
+        while True:
             i = self.read_sentence()
             if len(i) == 0:
                 continue
@@ -52,20 +52,20 @@ class ApiRos:
 
     def read_sentence(self):
         r = []
-        while 1:
+        while True:
             w = self.read_word()
             if w == '':
                 return r
             r.append(w)
-            
+
     def write_word(self, w):
-        print "<<< " + w
+        # print "<<< " + w
         self.write_len(len(w))
         self.write_str(w)
 
     def read_word(self):
         ret = self.read_str(self.read_len())
-        print ">>> " + ret
+        # print ">>> " + ret
         return ret
 
     def write_len(self, l):
@@ -80,13 +80,13 @@ class ApiRos:
             self.write_str(chr((l >> 16) & 0xFF))
             self.write_str(chr((l >> 8) & 0xFF))
             self.write_str(chr(l & 0xFF))
-        elif l < 0x10000000:        
-            l |= 0xE0000000         
+        elif l < 0x10000000:
+            l |= 0xE0000000
             self.write_str(chr((l >> 24) & 0xFF))
             self.write_str(chr((l >> 16) & 0xFF))
             self.write_str(chr((l >> 8) & 0xFF))
             self.write_str(chr(l & 0xFF))
-        else:                       
+        else:
             self.write_str(chr(0xF0))
             self.write_str(chr((l >> 24) & 0xFF))
             self.write_str(chr((l >> 16) & 0xFF))
@@ -95,48 +95,48 @@ class ApiRos:
 
     def read_len(self):
         c = ord(self.read_str(1))
-        if (c & 0x80) == 0x00:      
-            pass                    
-        elif (c & 0xC0) == 0x80:    
-            c &= ~0xC0              
-            c <<= 8                 
+        if (c & 0x80) == 0x00:
+            pass
+        elif (c & 0xC0) == 0x80:
+            c &= ~0xC0
+            c <<= 8
             c += ord(self.read_str(1))
-        elif (c & 0xE0) == 0xC0:    
-            c &= ~0xE0              
-            c <<= 8                 
+        elif (c & 0xE0) == 0xC0:
+            c &= ~0xE0
+            c <<= 8
             c += ord(self.read_str(1))
-            c <<= 8                 
+            c <<= 8
             c += ord(self.read_str(1))
-        elif (c & 0xF0) == 0xE0:    
-            c &= ~0xF0              
-            c <<= 8                 
+        elif (c & 0xF0) == 0xE0:
+            c &= ~0xF0
+            c <<= 8
             c += ord(self.read_str(1))
-            c <<= 8                 
+            c <<= 8
             c += ord(self.read_str(1))
-            c <<= 8                 
+            c <<= 8
             c += ord(self.read_str(1))
-        elif (c & 0xF8) == 0xF0:    
+        elif (c & 0xF8) == 0xF0:
             c = ord(self.read_str(1))
-            c <<= 8                 
+            c <<= 8
             c += ord(self.read_str(1))
-            c <<= 8                 
+            c <<= 8
             c += ord(self.read_str(1))
-            c <<= 8                 
+            c <<= 8
             c += ord(self.read_str(1))
-        return c                    
+        return c
 
-    def write_str(self, str):
+    def write_str(self, string):
         n = 0
-        while n < len(str):         
-            r = self.sk.send(str[n:])
+        while n < len(string):
+            r = self.sock.send(string[n:])
             if r == 0:
                 raise RuntimeError("connection closed by remote end")
-            n += r                  
+            n += r
 
     def read_str(self, length):
-        ret = ''                    
-        while len(ret) < length:    
-            s = self.sk.recv(length - len(ret))
+        ret = ''
+        while len(ret) < length:
+            s = self.sock.recv(length - len(ret))
             if s == '':
                 raise RuntimeError("connection closed by remote end")
             ret += s
@@ -145,30 +145,47 @@ class ApiRos:
 
 def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((sys.argv[1], 8728))  
+    s.connect((sys.argv[1], 8728))
     apiros = ApiRos(s)
     apiros.login(sys.argv[2], sys.argv[3])
 
-    input_sentence = []
+    input_sentence = ["/system/identity/print"]
 
-    while 1:
-        r = select.select([s, sys.stdin], [], [], None)
-        if s in r[0]:
-            # something to read in socket, read sentence
-            x = apiros.read_sentence()
+    apiros.write_sentence(input_sentence)
 
-        if sys.stdin in r[0]:
-            # read line from input and strip off newline
-            l = sys.stdin.readline()
-            l = l[:-1]
+    r = select.select([s], [], [], None)
+    if s in r[0]:
+        # something to read in socket, read sentence
+        x = apiros.read_sentence()
+        print(x)
 
-            # if empty line, send sentence and start with new
-            # otherwise append to input sentence
-            if l == '':
-                apiros.write_sentence(input_sentence)
-                input_sentence = []
-            else:
-                input_sentence.append(l)
+# Default main()
+# def main():
+#     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     s.connect((sys.argv[1], 8728))
+#     apiros = ApiRos(s)
+#     apiros.login(sys.argv[2], sys.argv[3])
+#
+#     input_sentence = []
+#
+#     while True:
+#         r = select.select([s, sys.stdin], [], [], None)
+#         if s in r[0]:
+#             # something to read in socket, read sentence
+#             x = apiros.read_sentence()
+#
+#         if sys.stdin in r[0]:
+#             # read line from input and strip off newline
+#             l = sys.stdin.readline()
+#             l = l[:-1]
+#
+#             # if empty line, send sentence and start with new
+#             # otherwise append to input sentence
+#             if l == '':
+#                 apiros.write_sentence(input_sentence)
+#                 input_sentence = []
+#             else:
+#                 input_sentence.append(l)
 
 
 if __name__ == '__main__':
