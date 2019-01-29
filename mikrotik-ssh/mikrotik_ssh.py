@@ -3,13 +3,9 @@
 import argparse
 import re
 import socket
-try:
-    from paramiko import SSHClient
-    from paramiko import AutoAddPolicy
-    from paramiko.ssh_exception import NoValidConnectionsError, AuthenticationException, SSHException
-except ImportError:
-    from paramiko import SSHClient
-    print "Import error. Chech paramiko module."
+
+from paramiko import AutoAddPolicy, SSHClient
+from paramiko.ssh_exception import (AuthenticationException, NoValidConnectionsError, SSHException)
 
 
 class MtControl(object): #TODO разобраться с закрытием переданного инстанса
@@ -28,8 +24,8 @@ class MtControl(object): #TODO разобраться с закрытием пе
         if self.connection:
             self.connection.close()
 
-    # def __del__(self):
-    #     self.close()
+    def __del__(self):
+        self.close()
 
     def connect(self):
         """
@@ -40,16 +36,10 @@ class MtControl(object): #TODO разобраться с закрытием пе
         mt_ssh.set_missing_host_key_policy(AutoAddPolicy())
 
         try:
-            mt_ssh.connect(self.address, self.port, username=self.username, password=self.password, timeout=1)
+            mt_ssh.connect(self.address, self.port, username=self.username, password=self.password, timeout=1, allow_agent=False,look_for_keys=False)
 
-        except NoValidConnectionsError:
-            print('Connection error!')
-
-        except AuthenticationException:
-            print('Authentication failed!')
-
-        except SSHException:
-            print('Error reading SSH protocol banner')
+        except (AuthenticationException, NoValidConnectionsError, SSHException) as e :
+            print(e)
 
         except socket.timeout:
             print('Connection timeout')
@@ -58,15 +48,13 @@ class MtControl(object): #TODO разобраться с закрытием пе
             return mt_ssh
 
     def execute(self, command):
-
         try:
             if isinstance(command, list):
-                command = " ".join(command)  # TODO Попоравить конкатенацию
-
+                command = " ".join(command) 
         except TypeError:
             print('Something wrong with your command!')
 
-        stdin, stdout, stderr = self.connection.exec_command(command)
+        _, stdout, _ = self.connection.exec_command(command)
 
         stdout = stdout.readlines()
         output = ""
@@ -75,7 +63,6 @@ class MtControl(object): #TODO разобраться с закрытием пе
             output = output + line
 
         if output != "":
-            # rstrip() for remove /r and /n
             return output.rstrip()
         else:
             return None
@@ -107,8 +94,7 @@ def main():
 
     with MtControl(args.address, args.port, args.username, args.password) as mt_ssh:
         try:
-            mt_ssh.execute(args.command)
-        #TODO Обработать исключение
+            print(mt_ssh.execute(args.command))
         except Exception:
             pass
 
