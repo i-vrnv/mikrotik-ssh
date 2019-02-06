@@ -20,6 +20,7 @@ optional arguments:
 | --port | Port to connect to on the remote host (default: 22) |
 | -u, --username | User to connect to on the remote host (default: admin) |
 |-p, --password | Password (default: blank) |
+|-k, --keyfile | Keyfile for auth ( default: None)|
 | -c, --command | Command for execute |
 
 example:
