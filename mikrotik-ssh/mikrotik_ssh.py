@@ -1,4 +1,4 @@
-# coding=utf-8
+# -*- coding: utf-8 -*-
 
 import argparse
 import re
@@ -10,11 +10,12 @@ from paramiko.ssh_exception import (AuthenticationException, NoValidConnectionsE
 
 class MtControl(object): #TODO разобраться с закрытием переданного инстанса
 
-    def __init__(self, address, port, username, password):
+    def __init__(self, address, port, username, password, keyfile=None):
         self.address = address
         self.port = port
         self.username = username
         self.password = password
+        self.keyfile = keyfile
         self.connection = self.connect()
 
     def __enter__(self):
@@ -36,7 +37,7 @@ class MtControl(object): #TODO разобраться с закрытием пе
         mt_ssh.set_missing_host_key_policy(AutoAddPolicy())
 
         try:
-            mt_ssh.connect(self.address, self.port, username=self.username, password=self.password, timeout=1, allow_agent=False,look_for_keys=False)
+            mt_ssh.connect(self.address, self.port, username=self.username, password=self.password, key_filename=self.keyfile, timeout=1, allow_agent=False,look_for_keys=False)
 
         except (AuthenticationException, NoValidConnectionsError, SSHException) as e :
             print(e)
@@ -88,6 +89,7 @@ def main():
     parser.add_argument('--port', type=int, required=False, default=22)
     parser.add_argument('-u', '--username', type=str, required=False, default='admin')
     parser.add_argument('-p', '--password', type=str, required=False, default='')
+    parser.add_argument('-k', '--keyfile', type=str, required=False, default='')
     parser.add_argument('-c', '--command', type=str, required=True, nargs='+')
 
     args = parser.parse_args()
